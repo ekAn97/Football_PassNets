@@ -180,6 +180,8 @@ def get_passing_data(event_data, lineup, team_name, phase_idx, subs_id):
     ).rename(columns = {"jersey_number": "pass_recipient_jersey"})
 
     pass_data = pass_data.drop(columns = ["player_id_recipient"])
+    pass_data["player_name_jersey"] = pass_data["player_name_jersey"].apply(lambda x: str(x))
+    pass_data["pass_recipient_jersey"] = pass_data["pass_recipient_jersey"].apply(lambda x: str(x))
 
     return pass_data
 
