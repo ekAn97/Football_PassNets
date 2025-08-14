@@ -1,4 +1,11 @@
 {
     "competition": "UEFA Euro",
-    "season": "2024"
+    "season": "2024",
+    "pitch_type": {
+        "statsbomb": {
+            "pitch_length": 120,
+            "pitch_width": 80
+        }
+    }
+
 }

@@ -11,16 +11,12 @@ mathematical calculations are also included.
 '''
 
 #### HELP FUNCTIONS FOR CALCULATIONS ####
-def cosine_pass_vector(pass_data, x_start, x_end, y_start, y_end):
+def cosine_pass_vector(pass_data):
     '''
     A function that calculates the cosine of the angle of a pass
 
     INPUT:
         pass_data: pd.DataFrame with passing data
-        x_start: str, column name for the x-position of passer
-        x_end: str, column name for the x-position of recipient
-        y_start: str, column name for the y-position of passer
-        y_end: str, column name for the position of recipient
 
     OUTPUT:
         pass_data: pd.DataFrame with a "cosine" column
@@ -52,6 +48,7 @@ def get_match_data(competition, season):
         season: str, season name
 
     OUTPUT
+        parser: parser object to retrieve data
         match_data: pd.DataFrame with the competition's match data
     '''
     # Open Data
@@ -106,7 +103,7 @@ def phase_of_play(event_data, team_name):
         team_name: str
 
     OUTPUT
-
+        idx_bound: list, contains index boundaries that signal the start and end of each phase
 
     '''
     subs_id = event_data[(event_data["type_name"] == "Substitution") & (event_data["team_name"] == team_name)]["index"].values
@@ -187,25 +184,28 @@ def get_passing_data(event_data, lineup, team_name, phase_idx, subs_id):
     return pass_data
 
 
-def region_pass_filter(pass_data, config, pitch_third):
+def region_pass_filter(pass_data, config, pitch_type, pitch_third):
     '''
-    Divide the pitch in three regions: defensive, midfield and attacking thirds.
+    Divide the pitch in three third: defensive, midfield and attacking thirds.
     Query the passing data accordingly to get the passes that occurred in the
-    desired region.
+    desired third.
 
     INPUT:
         pass_data: pd.DataFrame, all pass events except throw-ins
         config: json/dict, import the parsed config file to get the pitch name and dimensions
+        pitch_type: str, name of data provider
         pitch_third: str, "def", "mid" or "att"
 
     OUTPUT:
-        first_bound: 
-        filtered_pass_data: pd.DataFrame, contains pass events in the specified region 
+        first_bound: float, signals the end of the defensive third
+        second_bound: float, signals the end of the midfield third
+        filtered_pass_data: pd.DataFrame, contains pass events in the specified third 
     '''
     # Define the pitch and set the coordinates
-    pitch = Pitch(pitch_type = config["pitch_type"], axis = False, label = False)
-    length, width = config["pitch_type"]["pitch_length"], config["pitch_type"]["pitch_width"]
-    first_bound, second_bound = np.round(np.length / 3, 2), np.round((2 * length) / 3, 2)
+    pitch_info = config["pitch_type"][pitch_type]
+    pitch = Pitch(pitch_type = pitch_type, axis = False, label = False)
+    length, width = pitch_info["pitch_length"], pitch_info["pitch_width"]
+    first_bound, second_bound = np.round((length / 3), 2), np.round((2 * length) / 3, 2)
 
     if pitch_third == "def": # defensive third
         x_start, x_end = 0, first_bound
@@ -263,7 +263,7 @@ def progressive_passes(pass_data, region_change, first_bound, second_bound):
         pass_data: pd.DataFrame, with filtered passes
     '''
     if region_change == "d2m": # Progress ball from defensive third to the midfield third
-        pass_data = pass_data[(pass_data["x"] < first_bound) & (pass_data["end_x"] > first_bound)\
+        pass_data = pass_data[(pass_data["x"] < first_bound) & (pass_data["end_x"] >= first_bound)\
                               & (pass_data["end_x"] < second_bound)]
         
     elif region_change == "m2a": # Progress ball from midfield third to the attacking third
